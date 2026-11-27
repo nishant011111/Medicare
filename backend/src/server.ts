@@ -22,7 +22,12 @@ async function bootstrap() {
 
   // Hydrate persisted unified database snapshot shared by Web & Android clients before seeding
   const hydrated = loadPersistedDatabase();
-  const seededOrMigrated = await seedDatabaseIfEmpty().catch(() => false);
+  const seededOrMigrated = await seedDatabaseIfEmpty().catch((err) => {
+    StructuredLogger.warn('server.seed.warning', {
+      message: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  });
   if (!hydrated || seededOrMigrated) {
     persistDatabaseNow();
   }
@@ -35,7 +40,13 @@ async function bootstrap() {
   }
 
   const app = createApp();
-  const port = Number(process.env.PORT) || 4000;
+  const nginxPort = process.env.NGINX_PORT?.trim();
+  const rawPort = process.env.PORT?.trim();
+  const resolvedPortStr =
+    nginxPort && rawPort === nginxPort
+      ? process.env.DEFAULT_APP_PORT?.trim() || '3000'
+      : rawPort || '4000';
+  const port = Number(resolvedPortStr) || 4000;
   const persistence = getPersistenceStatus();
   const firebaseMeta = getSharedFirebaseMetadata();
 

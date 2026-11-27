@@ -324,9 +324,29 @@ export class RelationalDatabaseStore {
 
 export const db = new RelationalDatabaseStore();
 
-let prismaInstance: import('@prisma/client').PrismaClient | null = null;
+export interface PrismaClientLike {
+  $transaction: <T>(fn: (tx: any) => Promise<T>, options?: { maxWait?: number; timeout?: number }) => Promise<T>;
+  $disconnect: () => Promise<void>;
+}
 
-export function getPrismaClient(): import('@prisma/client').PrismaClient | null {
+let prismaInstance: PrismaClientLike | null = null;
+
+function hasConfiguredRemotePostgresUrl(): boolean {
+  const url = process.env.DATABASE_URL?.trim();
+  return Boolean(
+    url &&
+      !url.includes('placeholder') &&
+      !url.startsWith('postgresql://localhost') &&
+      !url.startsWith('postgres://localhost') &&
+      !url.startsWith('postgresql://127.0.0.1') &&
+      !url.startsWith('postgres://127.0.0.1')
+  );
+}
+
+export function getPrismaClient(): PrismaClientLike | null {
+  if (!hasConfiguredRemotePostgresUrl()) {
+    return null;
+  }
   if (!prismaInstance) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -349,7 +369,7 @@ export const prisma = getPrismaClient();
 export async function withTransaction<T>(
   action: (tx: any) => Promise<T>
 ): Promise<T> {
-  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('placeholder')) {
+  if (hasConfiguredRemotePostgresUrl()) {
     const client = getPrismaClient();
     if (client) {
       try {

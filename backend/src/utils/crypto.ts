@@ -33,12 +33,16 @@ try {
  */
 export async function hashPassword(plainPassword: string): Promise<string> {
   if (argon2Lib) {
-    return argon2Lib.hash(plainPassword, {
-      type: argon2Lib.argon2id,
-      memoryCost: env.ARGON2_MEMORY_COST,
-      timeCost: env.ARGON2_TIME_COST,
-      parallelism: env.ARGON2_PARALLELISM,
-    });
+    try {
+      return await argon2Lib.hash(plainPassword, {
+        type: argon2Lib.argon2id,
+        memoryCost: env.ARGON2_MEMORY_COST,
+        timeCost: env.ARGON2_TIME_COST,
+        parallelism: env.ARGON2_PARALLELISM,
+      });
+    } catch {
+      argon2Lib = null;
+    }
   }
   const salt = crypto.randomBytes(16);
   const derivedKey = await new Promise<Buffer>((resolve, reject) => {

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { db } from './prisma';
 import { clinicalStore } from '../modules/clinical/clinical.service';
@@ -8,9 +9,25 @@ import { securityStore } from '../modules/security/security.service';
 import { saasStore } from '../modules/saas/saas.service';
 import { aiStore } from '../modules/ai/ai.service';
 
-const STORAGE_BASE_DIR = path.resolve(__dirname, '../../storage');
+const PRIMARY_STORAGE_BASE_DIR = path.resolve(__dirname, '../../storage');
+const FALLBACK_STORAGE_BASE_DIR = path.join(os.tmpdir(), 'medicore-storage');
 const DB_SNAPSHOT_FILENAME = 'medicore-unified-db.json';
 const SNAPSHOT_VERSION = 1;
+
+function resolveWritableStorageDir(): string {
+  for (const dir of [PRIMARY_STORAGE_BASE_DIR, FALLBACK_STORAGE_BASE_DIR]) {
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+      }
+      fs.accessSync(dir, fs.constants.R_OK | fs.constants.W_OK);
+      return dir;
+    } catch {
+      // Try next storage candidate (e.g. read-only container app dir -> /tmp)
+    }
+  }
+  return FALLBACK_STORAGE_BASE_DIR;
+}
 
 interface SerializedTaggedValue {
   __mcType: 'Date' | 'Map' | 'Set';
@@ -112,21 +129,19 @@ function replaceSet<T>(target: Set<T>, source: unknown) {
 }
 
 function resolveSafeSnapshotPath(customPath?: string): string {
-  const targetDir = customPath ? path.dirname(path.resolve(customPath)) : STORAGE_BASE_DIR;
+  const baseDir = customPath ? path.dirname(path.resolve(customPath)) : resolveWritableStorageDir();
   const resolved = customPath
     ? path.resolve(customPath)
-    : path.resolve(STORAGE_BASE_DIR, DB_SNAPSHOT_FILENAME);
+    : path.resolve(baseDir, DB_SNAPSHOT_FILENAME);
 
   if (!customPath) {
-    const basePrefix = STORAGE_BASE_DIR.endsWith(path.sep)
-      ? STORAGE_BASE_DIR
-      : `${STORAGE_BASE_DIR}${path.sep}`;
+    const basePrefix = baseDir.endsWith(path.sep) ? baseDir : `${baseDir}${path.sep}`;
     if (!resolved.startsWith(basePrefix)) {
       throw new Error('Resolved database snapshot path escaped confined storage directory');
     }
   }
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true, mode: 0o700 });
+  if (!fs.existsSync(baseDir)) {
+    fs.mkdirSync(baseDir, { recursive: true, mode: 0o755 });
   }
   return resolved;
 }
@@ -145,7 +160,8 @@ export function isPersistentStorageEnabled(): boolean {
 
 export function getPersistenceStatus() {
   const enabled = isPersistentStorageEnabled();
-  const snapshotPath = path.resolve(STORAGE_BASE_DIR, DB_SNAPSHOT_FILENAME);
+  const baseDir = enabled ? resolveWritableStorageDir() : PRIMARY_STORAGE_BASE_DIR;
+  const snapshotPath = path.resolve(baseDir, DB_SNAPSHOT_FILENAME);
   const existsOnDisk = enabled && fs.existsSync(snapshotPath);
   return {
     enabled,

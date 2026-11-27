@@ -44,16 +44,37 @@ export function createApp() {
   // Security headers & CORS
   app.use(
     helmet({
+      frameguard: false,
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
       contentSecurityPolicy:
         env.NODE_ENV === 'production'
           ? {
               directives: {
                 defaultSrc: ["'self'"],
-                scriptSrc: ["'self'"],
+                scriptSrc: [
+                  "'self'",
+                  "'unsafe-inline'",
+                  'https://apis.google.com',
+                  'https://www.gstatic.com',
+                ],
                 styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
                 fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
-                imgSrc: ["'self'", 'data:', 'blob:'],
-                connectSrc: ["'self'"],
+                imgSrc: ["'self'", 'data:', 'blob:', 'https://*.googleusercontent.com'],
+                frameSrc: [
+                  "'self'",
+                  'https://*.firebaseapp.com',
+                  'https://accounts.google.com',
+                ],
+                frameAncestors: null,
+                connectSrc: [
+                  "'self'",
+                  'https://*.googleapis.com',
+                  'https://*.firebaseio.com',
+                  'https://*.firebaseapp.com',
+                  'wss://*.firebaseio.com',
+                  'https://accounts.google.com',
+                ],
               },
             }
           : false,
@@ -221,6 +242,8 @@ export function createApp() {
   const candidateWebDistDirs = [
     path.resolve(__dirname, '../../web/dist'),
     path.resolve(__dirname, '../../../web/dist'),
+    path.resolve(process.cwd(), '../web/dist'),
+    path.resolve(process.cwd(), 'web/dist'),
   ];
   const webDistDir = candidateWebDistDirs.find((dir) => fs.existsSync(path.join(dir, 'index.html')));
   if (env.NODE_ENV === 'production' && webDistDir) {

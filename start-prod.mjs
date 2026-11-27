@@ -17,30 +17,40 @@ function hasBin(binName, workspaceDir) {
   );
 }
 
-if (!hasBin('tsc', backendDir) || !hasBin('vite', webDir)) {
-  console.log('[MediCore] Installing workspace dependencies...');
-  execSync('npm install --no-audit --no-fund', { cwd: rootDir, stdio: 'inherit' });
+const needsBackendBuild = !fs.existsSync(backendEntry);
+const needsWebBuild = !fs.existsSync(webEntry);
+
+// Only install/build when production bundles are missing (never block cold starts when pre-built)
+if (needsBackendBuild || needsWebBuild) {
+  if ((needsBackendBuild && !hasBin('tsc', backendDir)) || (needsWebBuild && !hasBin('vite', webDir))) {
+    console.log('[MediCore] Installing workspace dependencies for missing production bundle...');
+    execSync('npm install --include=dev --no-audit --no-fund', { cwd: rootDir, stdio: 'inherit' });
+  }
+  if (needsBackendBuild) {
+    console.log('[MediCore] Building backend production bundle...');
+    execSync('npm --workspace=backend run build', { cwd: rootDir, stdio: 'inherit' });
+  }
+  if (needsWebBuild) {
+    console.log('[MediCore] Building web production bundle...');
+    execSync('npm --workspace=web run build', { cwd: rootDir, stdio: 'inherit' });
+  }
 }
 
-const hasPrismaClient =
-  fs.existsSync(path.join(rootDir, 'node_modules', '.prisma', 'client', 'index.js')) ||
-  fs.existsSync(path.join(backendDir, 'node_modules', '.prisma', 'client', 'index.js'));
-if (!hasPrismaClient) {
-  console.log('[MediCore] Generating Prisma client...');
-  execSync('npm --workspace=backend run prisma:generate', { cwd: rootDir, stdio: 'inherit' });
-}
+// Resolve listening port safely:
+// - When running behind the AI Studio Nginx reverse proxy (NGINX_PORT=8080, PORT=8080, DEFAULT_APP_PORT=3000),
+//   Nginx already binds NGINX_PORT and proxies to DEFAULT_APP_PORT (3000), so avoid EADDRINUSE on 8080.
+// - On standalone Cloud Run (no NGINX_PORT), bind directly to PORT (typically 8080).
+const nginxPort = process.env.NGINX_PORT?.trim();
+const requestedPort = process.env.PORT?.trim();
+const defaultAppPort = process.env.DEFAULT_APP_PORT?.trim() || '3000';
+const port =
+  nginxPort && (!requestedPort || requestedPort === nginxPort)
+    ? defaultAppPort
+    : requestedPort || defaultAppPort;
 
-if (!fs.existsSync(backendEntry)) {
-  console.log('[MediCore] Building backend production bundle...');
-  execSync('npm --workspace=backend run build', { cwd: rootDir, stdio: 'inherit' });
-}
-if (!fs.existsSync(webEntry)) {
-  console.log('[MediCore] Building web production bundle...');
-  execSync('npm --workspace=web run build', { cwd: rootDir, stdio: 'inherit' });
-}
+console.log(`[MediCore] Launching production server on 0.0.0.0:${port}...`);
 
-const port = process.env.PORT || '3000';
-const prodProc = spawn('node', [backendEntry], {
+const prodProc = spawn(process.execPath, [backendEntry], {
   cwd: backendDir,
   stdio: 'inherit',
   env: {
@@ -50,7 +60,16 @@ const prodProc = spawn('node', [backendEntry], {
   },
 });
 
-prodProc.on('exit', (code) => {
+prodProc.on('error', (err) => {
+  console.error('[MediCore] Failed to start production server process:', err);
+  process.exit(1);
+});
+
+prodProc.on('exit', (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+    return;
+  }
   process.exit(code ?? 0);
 });
 
