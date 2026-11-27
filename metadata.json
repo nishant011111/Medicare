@@ -1,0 +1,8 @@
+{
+  "name": "MediCore",
+  "description": "MediCore – Dedicated Healthcare & Patient Care Portal for finding hospitals and doctors, appointments, medical records, prescriptions, lab reports, payments, and AI assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

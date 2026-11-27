@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MediCore</string>
+    <string name="medications_title">Medications &amp; Reminders</string>
+    <string name="medication_channel_name">Medication Reminders</string>
+    <string name="medication_channel_description">Scheduled alerts for your personal medication reminder times</string>
+    <string name="medication_notification_lockscreen_title">MediCore Reminder</string>
+    <string name="medication_notification_lockscreen_body">You have a scheduled medication reminder. Open MediCore to view details.</string>
+    <string name="billing_title">Billing &amp; Payments</string>
+    <string name="invoice_detail_title">Invoice Details</string>
+    <string name="payment_checkout_title">Secure Checkout</string>
+    <string name="payment_status_title">Payment Status</string>
+    <string name="payment_history_title">Payment History</string>
+    <string name="receipt_viewer_title">Payment Receipt</string>
+    <string name="patient_details_title">Patient Details</string>
+    <string name="patient_details_subtitle">Complete your required patient profile to continue</string>
+    <string name="patient_details_edit_title">Update Patient Details</string>
+    <string name="default_web_client_id" translatable="false">853319477717-webclient.apps.googleusercontent.com</string>
+</resources>

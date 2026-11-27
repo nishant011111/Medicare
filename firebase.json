@@ -1,0 +1,14 @@
+{
+  "firestore": {
+    "database": "ai-studio-medicare-8567e0e2-d4bb-4849-9f8b-f0a01b6a07e0",
+    "rules": "firestore.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8085
+    }
+  }
+}

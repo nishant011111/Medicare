@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="sharedpref" path="medicore_medication_alarms.xml" />
+    <exclude domain="file" path="datastore/medicore_keystore_protected_session.preferences_pb" />
+    <exclude domain="database" path="." />
+</full-backup-content>

@@ -1,0 +1,382 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Non-PII staff and clinician identity profile stored at /users/{userId}. Role is self-assigned only within non-admin staff roles on creation or managed by admins.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Authentication UID matching the document ID."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Display name shown in clinical workspace headers."
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Optional Google profile avatar URL."
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "SUPER_ADMIN",
+            "HOSPITAL_ADMIN",
+            "DOCTOR",
+            "NURSE",
+            "RECEPTIONIST",
+            "PHARMACIST",
+            "LAB_TECHNICIAN",
+            "ACCOUNTANT",
+            "PATIENT"
+          ],
+          "description": "Assigned MediCore role code across Web staff and Android patient clients."
+        },
+        "activeHospitalId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Currently selected hospital tenant ID."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "role", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII contact and department details stored at /users/{userId}/private/{docId}. Strictly restricted to owner or admin.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254,
+          "description": "Verified Google account email address."
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 24,
+          "description": "Optional staff contact phone number."
+        },
+        "department": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Optional clinical or administrative department."
+        },
+        "authProvider": {
+          "type": "string",
+          "enum": ["google.com", "phone", "email"],
+          "description": "Primary authentication provider."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["uid", "email", "authProvider", "createdAt", "updatedAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator directory record stored at /admins/{userId}.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Admin Firebase Auth UID."
+        },
+        "grantedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the administrator who granted privileges."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["uid", "grantedBy", "createdAt"]
+    },
+    "HospitalDirectory": {
+      "title": "HospitalDirectory",
+      "description": "Hospital tenant metadata and verified directory listings stored at /hospitals/{hospitalId}.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique hospital tenant identifier."
+        },
+        "directoryCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "description": "Official hospital directory code."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 180,
+          "description": "Hospital legal name."
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "description": "Hospital city."
+        },
+        "address": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 300,
+          "description": "Hospital street address."
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": ["PENDING_VERIFICATION", "VERIFIED", "SUSPENDED"],
+          "description": "Directory verification state."
+        },
+        "isActiveTenant": {
+          "type": "boolean",
+          "description": "Whether the hospital is an active MediCore tenant."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "directoryCode",
+        "name",
+        "city",
+        "address",
+        "verificationStatus",
+        "isActiveTenant",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AppointmentRecord": {
+      "title": "AppointmentRecord",
+      "description": "Hospital consultation appointment stored at /appointments/{appointmentId}.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Appointment document ID."
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the staff/clinician who owns or scheduled the appointment."
+        },
+        "hospitalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Hospital document ID."
+        },
+        "bookingNumber": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40,
+          "description": "Human-readable OPD booking token."
+        },
+        "doctorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Attending clinician display name."
+        },
+        "department": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "description": "Hospital clinical department."
+        },
+        "appointmentDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 20,
+          "description": "ISO date YYYY-MM-DD."
+        },
+        "slotTime": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 20,
+          "description": "Scheduled time slot."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["SCHEDULED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "CANCELLED"],
+          "description": "Current appointment workflow status. COMPLETED and CANCELLED are terminal."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "hospitalId",
+        "bookingNumber",
+        "doctorName",
+        "department",
+        "appointmentDate",
+        "slotTime",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ClinicalNoteRecord": {
+      "title": "ClinicalNoteRecord",
+      "description": "Clinician-authored consultation note stored at /clinical_notes/{noteId}.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Note document ID."
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Author clinician Firebase UID."
+        },
+        "hospitalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Hospital tenant ID."
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Brief encounter summary."
+        },
+        "soapNote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000,
+          "description": "Structured SOAP clinical note."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Up to 10 short clinical tags."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["DRAFT", "FINALIZED"],
+          "description": "Note lifecycle state. FINALIZED is terminal."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "authorId",
+        "hospitalId",
+        "summary",
+        "soapNote",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPublicProfile" },
+      "description": "Non-PII staff and clinician user profiles keyed by Firebase Auth UID."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII subcollection (email, phone, department) strictly readable/writable by the owning user or admin."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Trusted administrator membership documents."
+    },
+    "/hospitals/{hospitalId}": {
+      "schema": { "$ref": "#/entities/HospitalDirectory" },
+      "description": "Verified MediCore hospital directory and tenant registry."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/AppointmentRecord" },
+      "description": "Owner-scoped hospital appointment records with terminal status locking."
+    },
+    "/clinical_notes/{noteId}": {
+      "schema": { "$ref": "#/entities/ClinicalNoteRecord" },
+      "description": "Author-scoped clinician notes with bounded tags and terminal finalization lock."
+    }
+  }
+}
