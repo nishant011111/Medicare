@@ -1,5 +1,6 @@
 package com.example.core.designsystem.components
 
+import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -33,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +48,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +93,19 @@ fun MediCoreECGLoader(
     showLeadDot: Boolean = true,
     animationDurationMillis: Int = 1800
 ) {
+    val context = LocalContext.current
+    val isReducedMotion = remember(context) {
+        try {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            ) == 0f
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "ecg_wave_transition")
 
     // Sweep progress from 0f to 1f across the waveform
@@ -185,7 +201,21 @@ fun MediCoreECGLoader(
             lineTo(w, midY)
         }
 
-        // 3. Faint background trail so the entire cardiac cycle shape is subtly visible
+        // 3. Reduced-motion accessibility mode: render clean static clinical ECG trace
+        if (isReducedMotion) {
+            drawPath(
+                path = ecgPath,
+                color = lineColor,
+                style = Stroke(
+                    width = strokeWidth.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
+            )
+            return@Canvas
+        }
+
+        // 4. Faint background trail so the entire cardiac cycle shape is subtly visible
         drawPath(
             path = ecgPath,
             color = lineColor.copy(alpha = 0.15f),
@@ -196,7 +226,7 @@ fun MediCoreECGLoader(
             )
         )
 
-        // 4. Measure path and render active trace up to sweepProgress
+        // 5. Measure path and render active trace up to sweepProgress
         val composePathMeasure = PathMeasure()
         composePathMeasure.setPath(ecgPath, false)
         val totalLength = composePathMeasure.length
@@ -217,7 +247,7 @@ fun MediCoreECGLoader(
             )
         )
 
-        // 5. Active monitor lead dot at the tip of the moving waveform
+        // 6. Active monitor lead dot at the tip of the moving waveform
         if (showLeadDot && currentLength > 2f) {
             val androidPathMeasure = android.graphics.PathMeasure(ecgPath.asAndroidPath(), false)
             val pos = FloatArray(2)
@@ -528,5 +558,32 @@ fun MediCoreErrorState(
                 Text("Retry", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
+    }
+}
+
+/**
+ * Reusable state container that renders MediCorePageLoader, MediCoreErrorState, or Success content
+ * cleanly from a standard LoadingState<T>.
+ */
+@Composable
+fun <T> MediCoreStateContainer(
+    state: LoadingState<T>,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+    loadingMessage: String? = null,
+    content: @Composable (T) -> Unit
+) {
+    when (state) {
+        is LoadingState.Idle -> Unit
+        is LoadingState.Loading -> MediCorePageLoader(
+            message = loadingMessage ?: state.message,
+            modifier = modifier
+        )
+        is LoadingState.Error -> MediCoreErrorState(
+            message = state.message,
+            onRetry = onRetry,
+            modifier = modifier
+        )
+        is LoadingState.Success -> content(state.data)
     }
 }

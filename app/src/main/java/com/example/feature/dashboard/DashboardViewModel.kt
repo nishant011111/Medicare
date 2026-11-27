@@ -69,7 +69,7 @@ class DashboardViewModel(
                 val hospitals = MediCoreEnterpriseRepository.directoryHospitals.value
                 val verifiedCount = hospitals.count { it.verificationStatus == DirectoryVerificationStatus.VERIFIED }
                 val summary = SampleData.getDashboardDataForRole(
-                    role = UserRole.PATIENT,
+                    role = current.userProfile.role,
                     hospitalName = current.selectedHospital.name,
                     directoryCount = hospitals.size,
                     verifiedCount = verifiedCount,
@@ -105,7 +105,7 @@ class DashboardViewModel(
         val encounters = MediCoreEnterpriseRepository.encounters.value
 
         val summary = SampleData.getDashboardDataForRole(
-            role = UserRole.PATIENT,
+            role = _uiState.value.userProfile.role,
             hospitalName = hospital.name,
             directoryCount = hospitals.size,
             verifiedCount = verifiedCount,
@@ -139,7 +139,7 @@ class DashboardViewModel(
         val encounters = MediCoreEnterpriseRepository.encounters.value
 
         val summary = SampleData.getDashboardDataForRole(
-            role = UserRole.PATIENT,
+            role = _uiState.value.userProfile.role,
             hospitalName = hospital.name,
             directoryCount = hospitals.size,
             verifiedCount = verifiedCount,

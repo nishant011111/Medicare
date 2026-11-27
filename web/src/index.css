@@ -80,3 +80,27 @@
 .dark .medicore-dashboard-content .mc-surface-card {
   background-color: #10253e;
 }
+
+/* MediCore ECG Universal Loading System Animation */
+@keyframes medicore-ecg-sweep {
+  0% {
+    stroke-dashoffset: 280;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.medicore-ecg-trace {
+  stroke-dasharray: 120 160;
+  stroke-dashoffset: 280;
+  animation: medicore-ecg-sweep 1.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .medicore-ecg-trace {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}

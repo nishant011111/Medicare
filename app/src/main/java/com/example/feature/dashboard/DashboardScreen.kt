@@ -63,7 +63,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.designsystem.components.HospitalBadge
 import com.example.core.designsystem.components.MediCoreCard
+import com.example.core.model.UserRole
+import com.example.feature.dashboard.views.AccountantDashboardView
+import com.example.feature.dashboard.views.AdminDashboardView
+import com.example.feature.dashboard.views.DoctorDashboardView
+import com.example.feature.dashboard.views.LabTechDashboardView
+import com.example.feature.dashboard.views.NurseDashboardView
 import com.example.feature.dashboard.views.PatientDashboardView
+import com.example.feature.dashboard.views.PharmacistDashboardView
+import com.example.feature.dashboard.views.ReceptionistDashboardView
+import com.example.feature.dashboard.views.SuperAdminDashboardView
 import com.example.ui.theme.MediCoreBorder
 import com.example.ui.theme.MediCorePrimary
 import com.example.ui.theme.MediCorePrimaryDark
@@ -245,19 +254,33 @@ fun DashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Patient Dashboard Health Summary & AI Banner
+            // Role-aware Dashboard Summary (Patient Portal + Multi-Role Staff Control Centers)
             item {
-                PatientDashboardView(
-                    summary = uiState.dashboardSummary,
-                    healthOverview = uiState.healthOverview,
-                    onActionClick = { handleAction(it) }
-                )
+                when (uiState.userProfile.role) {
+                    UserRole.PATIENT -> PatientDashboardView(
+                        summary = uiState.dashboardSummary,
+                        healthOverview = uiState.healthOverview,
+                        onActionClick = { handleAction(it) }
+                    )
+                    UserRole.DOCTOR -> DoctorDashboardView(uiState.dashboardSummary)
+                    UserRole.NURSE -> NurseDashboardView(uiState.dashboardSummary)
+                    UserRole.RECEPTIONIST -> ReceptionistDashboardView(uiState.dashboardSummary)
+                    UserRole.PHARMACIST -> PharmacistDashboardView(uiState.dashboardSummary)
+                    UserRole.LAB_TECHNICIAN -> LabTechDashboardView(uiState.dashboardSummary)
+                    UserRole.ACCOUNTANT -> AccountantDashboardView(uiState.dashboardSummary)
+                    UserRole.HOSPITAL_ADMIN -> AdminDashboardView(uiState.dashboardSummary)
+                    UserRole.SUPER_ADMIN -> SuperAdminDashboardView(uiState.dashboardSummary)
+                }
             }
 
-            // Patient Health Services Grid
+            // Services Grid Header
             item {
                 Text(
-                    text = "Patient Health Services",
+                    text = if (uiState.userProfile.role == UserRole.PATIENT) {
+                        "Patient Health Services"
+                    } else {
+                        "${uiState.userProfile.role.title} Quick Actions"
+                    },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MediCoreTextDark

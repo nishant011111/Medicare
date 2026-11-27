@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, Inbox, TrendingUp, TrendingDown } from 'lucide-react';
 import { MEDICORE_BRAND } from '../../assets/brand';
 import { Button } from './Button';
+import { MediCoreECGLoader } from './MediCoreECGLoader';
 
 export type BadgeVariant = 'primary' | 'teal' | 'navy' | 'success' | 'warning' | 'danger' | 'error' | 'neutral';
 
@@ -267,10 +268,8 @@ export const OfficialLogoLoader: React.FC<{ message?: string }> = ({
           alt={MEDICORE_BRAND.fullTitle}
           className="w-52 sm:w-60 h-auto object-contain mx-auto bg-white rounded-xl p-2"
         />
-        <div className="flex items-center justify-center gap-2.5 text-xs font-semibold text-[#172B43] dark:text-slate-200">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#11A6A0] animate-ping" />
-          <span>{message}</span>
-        </div>
+        <MediCoreECGLoader width={190} height={48} label={message} />
+        <p className="text-xs font-semibold text-[#123B63] dark:text-slate-200">{message}</p>
       </div>
     </div>
   );
